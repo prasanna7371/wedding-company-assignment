@@ -4,18 +4,29 @@ const { connectDB } = require('./config/database');
 
 const PORT = process.env.PORT || 5001;
 
+// Initialize database connection
 connectDB();
 
+// Start server
 const server = app.listen(PORT, () => {
-  console.log(`\n🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🌐 Access at: http://localhost:${PORT}\n`);
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Local URL: http://localhost:${PORT}`);
+  console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+  console.log(`${'='.repeat(60)}\n`);
 });
 
+// Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
-  console.log('UNHANDLED REJECTION! Shutting down...');
-  console.log(err.name, err.message);
+  console.error('❌ Unhandled Rejection:', err.message);
+  server.close(() => process.exit(1));
+});
+
+// Handle SIGTERM
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
   server.close(() => {
-    process.exit(1);
+    console.log('Process terminated');
   });
 });
