@@ -1,284 +1,254 @@
-# Organization Management Service
+# Organization Management System - The Wedding Company 
 
-A multi-tenant backend service for managing organizations with dynamic MongoDB collections and JWT authentication.
+A professional full-stack multi-tenant organization management system with complete CRUD operations and JWT authentication.
 
-## 🚀 Features
+##  Live Demo
 
-- Multi-tenant architecture with dynamic collection creation
-- RESTful API design
-- JWT-based authentication
-- Secure password hashing with bcrypt
-- MongoDB as the database
-- Clean, modular code structure
+- **Frontend**: https://wedding-company-assignment-swart.vercel.app/
+- **Backend API**: https://org-management-api.onrender.com
+- **API Health Check**: https://org-management-api.onrender.com/health
 
-## 📋 Prerequisites
 
-- Node.js (v14 or higher)
-- MongoDB (v4.4 or higher)
+## Features
+
+- Create organizations with admin accounts
+-  Secure JWT-based authentication
+- Search organizations by name
+-  Update organization admin credentials
+- Delete organizations (with authentication)
+-  Dynamic MongoDB collection per organization
+-  Professional UI with smooth animations
+-  Complete error handling
+-  Responsive design
+
+##  Tech Stack
+
+
+
+### Backend
+- **Runtime**: Node.js with Express.js
+- **Database**: MongoDB (multi-tenant architecture)
+- **Authentication**: JSON Web Tokens (JWT)
+- **Security**: bcrypt password hashing
+- **Validation**: Express validators
+
+### Frontend
+- **Framework**: React 18
+- **Styling**: Custom CSS with gradients
+- **State Management**: React Hooks
+- **HTTP Client**: Fetch API
+
+##  API Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/health` | Health check | No |
+| POST | `/org/create` | Create organization | No |
+| GET | `/org/get/:name` | Get organization | No |
+| PUT | `/org/update/:name` | Update organization | No |
+| DELETE | `/org/delete/:name` | Delete organization | Yes |
+| POST | `/admin/login` | Admin login | No |
+
+##  Architecture
+
+The system implements a **multi-tenant architecture** where:
+- Each organization gets its own isolated MongoDB collection
+- Single application instance serves all organizations
+- Complete data isolation between tenants
+- Scalable design for growth
+
+##  Local Development
+
+### Prerequisites
+- Node.js v14 or higher
+- MongoDB running locally
 - npm or yarn
 
-## 🛠️ Installation
-
-1. **Clone the repository**
+### Backend Setup
 ```bash
-git clone <your-repo-url>
-cd org-management-service
-```
+# Clone repository
+git clone https://github.com/prasanna7371/wedding-company-assignment
+cd wedding-company-assignment
 
-2. **Install dependencies**
-```bash
+# Install dependencies
 npm install
-```
 
-3. **Set up environment variables**
-
-Create a `.env` file in the root directory:
-```env
-PORT=5000
+# Create .env file
+echo "PORT=5001
 MONGODB_URI=mongodb://localhost:27017/master_db
-JWT_SECRET=your_super_secret_jwt_key_change_this
+JWT_SECRET=your_secret_key
 JWT_EXPIRE=7d
-NODE_ENV=development
-```
+NODE_ENV=development" > .env
 
-4. **Start MongoDB**
-
-Make sure MongoDB is running on your machine:
-```bash
-# macOS (if installed via Homebrew)
-brew services start mongodb-community
-
-# Or run manually
-mongod --dbpath /path/to/your/data/directory
-```
-
-## 🏃 Running the Application
-
-**Development mode:**
-```bash
+# Start server
 npm run dev
 ```
 
-**Production mode:**
+### Frontend Setup
 ```bash
+# Navigate to frontend
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
 npm start
 ```
-
-The server will start on `http://localhost:5000`
-
-## 📡 API Endpoints
-
-### 1. Create Organization
-**POST** `/org/create`
-
-**Request Body:**
-```json
-{
-  "organization_name": "tech_corp",
-  "email": "admin@techcorp.com",
-  "password": "securepass123"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Organization created successfully",
-  "data": {
-    "organization_id": "6472b8f9c8d4e5a6b7c8d9e0",
-    "organization_name": "tech_corp",
-    "collection_name": "org_tech_corp",
-    "admin_email": "admin@techcorp.com",
-    "created_at": "2024-12-11T10:30:00.000Z"
-  }
-}
-```
-
-### 2. Get Organization by Name
-**GET** `/org/get/:organization_name`
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "organization_id": "6472b8f9c8d4e5a6b7c8d9e0",
-    "organization_name": "tech_corp",
-    "collection_name": "org_tech_corp",
-    "admin_email": "admin@techcorp.com",
-    "created_at": "2024-12-11T10:30:00.000Z"
-  }
-}
-```
-
-### 3. Update Organization
-**PUT** `/org/update/:organization_name`
-
-**Request Body:**
-```json
-{
-  "email": "newemail@techcorp.com",
-  "password": "newsecurepass456"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Organization updated successfully",
-  "data": {
-    "organization_name": "tech_corp",
-    "updated_at": "2024-12-11T11:00:00.000Z"
-  }
-}
-```
-
-### 4. Delete Organization
-**DELETE** `/org/delete/:organization_name`
-
-**Headers:**
-```
-Authorization: Bearer <jwt_token>
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Organization deleted successfully"
-}
-```
-
-### 5. Admin Login
-**POST** `/admin/login`
-
-**Request Body:**
-```json
-{
-  "email": "admin@techcorp.com",
-  "password": "securepass123"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "admin": {
-    "id": "6472b8f9c8d4e5a6b7c8d9e1",
-    "email": "admin@techcorp.com",
-    "organization_id": "6472b8f9c8d4e5a6b7c8d9e0",
-    "organization_name": "tech_corp"
-  }
-}
-```
-
-## 🧪 Testing the API
-
-You can test the API using:
-
-1. **cURL**
-```bash
-# Create organization
-curl -X POST http://localhost:5000/org/create \
-  -H "Content-Type: application/json" \
-  -d '{"organization_name":"test_org","email":"admin@test.com","password":"pass123"}'
-
-# Login
-curl -X POST http://localhost:5000/admin/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@test.com","password":"pass123"}'
-```
-
-2. **Postman** - Import the endpoints and test them interactively
-
-3. **Thunder Client** (VS Code extension) - Great for quick testing
-
-## 🏗️ Project Structure
-
-```
-org-management-service/
+ COMPLETE FILE STRUCTURE
+ 
+wedding-company-assignment/
 ├── src/
 │   ├── config/
-│   │   └── database.js          # Database configuration
+│   │   └── database.js
 │   ├── controllers/
-│   │   ├── authController.js    # Authentication logic
+│   │   ├── authController.js
 │   │   └── organizationController.js
 │   ├── middleware/
-│   │   ├── auth.js              # JWT authentication
-│   │   └── errorHandler.js      # Global error handling
+│   │   ├── auth.js
+│   │   └── errorHandler.js
 │   ├── models/
-│   │   ├── Admin.js             # Admin user schema
-│   │   └── Organization.js      # Organization schema
+│   │   ├── Admin.js
+│   │   └── Organization.js
 │   ├── routes/
 │   │   ├── authRoutes.js
 │   │   └── organizationRoutes.js
-│   ├── app.js                   # Express app setup
-│   └── server.js                # Server entry point
-├── .env                         # Environment variables
+│   ├── app.js
+│   └── server.js
+├── .env
 ├── .gitignore
 ├── package.json
 └── README.md
+
+
+##  Testing Guide
+
+### 1. Create Organization
+- Navigate to "Create" tab
+- Fill in organization name, email, password
+- Submit form
+
+### 2. Login
+- Navigate to "Login" tab
+- Use credentials from step 1
+- Receive JWT token
+
+### 3. Search
+- Navigate to "Search" tab
+- Enter organization name
+- View details
+
+### 4. Update
+- Navigate to "Update" tab
+- Enter organization name
+- Provide new email/password
+- Submit
+
+### 5. Delete
+- Ensure you're logged in
+- Navigate to "Delete" tab
+- Enter organization name
+- Confirm deletion
+
+##  Security Features
+
+- Password hashing with bcrypt (12 rounds)
+- JWT token-based authentication
+- Protected delete endpoint
+- Input validation and sanitization
+- CORS configuration
+- Environment variable protection
+
+## Database Schema
+
+### Organization Collection
+```javascript
+{
+  organization_name: String (unique),
+  collection_name: String,
+  admin_user_id: ObjectId,
+  connection_details: {
+    database_name: String,
+    created_at: Date
+  },
+  createdAt: Date,
+  updatedAt: Date
+}
 ```
 
-## 🔒 Security Features
+### Admin Collection
+```javascript
+{
+  email: String (unique),
+  password: String (hashed),
+  organization_id: ObjectId,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
 
-- Passwords hashed using bcrypt (12 rounds)
-- JWT tokens for authentication
-- Protected routes require valid tokens
-- Authorization checks for sensitive operations
-- Input validation on all endpoints
+##  Deployment
 
-## 🎯 Design Decisions
+### Backend (Render)
+- Automatic deployment from GitHub
+- Environment variables configured
+- MongoDB Atlas cloud database
 
-### Architecture
-- **Multi-tenant with dynamic collections**: Each organization gets its own MongoDB collection, providing data isolation while maintaining a single application instance.
-- **Master database approach**: A central database stores organization metadata and credentials, simplifying management and authentication.
+### Frontend (Vercel)
+- Static site deployment
+- Environment variables for API URL
+- Automatic HTTPS
 
-### Technology Stack
-- **Node.js + Express**: Fast, lightweight, and perfect for REST APIs
-- **MongoDB**: NoSQL flexibility allows easy dynamic collection creation
-- **JWT**: Stateless authentication ideal for scalable systems
-- **Bcrypt**: Industry-standard password hashing
+##  Future Enhancements
 
-### Trade-offs
-**Pros:**
-- Excellent data isolation between organizations
-- Scalable architecture
-- Simple to add new organizations
-- No cross-organization data leakage
-
-**Cons:**
-- More complex than single-collection approach
-- Each organization connection has overhead
-- Migration complexity if restructuring needed
-
-### Improvements for Production
-- Rate limiting to prevent abuse
-- Redis for session management
-- Input sanitization library (express-validator)
-- Logging system (Winston/Morgan)
-- Database connection pooling optimization
+- Role-based access control (RBAC)
+- Organization member management
+- Activity logging and audit trails
+- Rate limiting
 - API documentation with Swagger
-- Comprehensive test suite
-- Docker containerization
-- CI/CD pipeline
+- Unit and integration tests
+- Email verification
+- Password reset functionality
 
-## 📝 Notes
+##  Developer
 
-- Organization names are automatically converted to lowercase
-- Collection names follow pattern: `org_<organization_name>`
-- Admin deletion automatically triggers organization deletion
-- JWT tokens expire after 7 days (configurable)
+Built as part of The Wedding Company backend developer internship assignment.
 
-## 👨‍💻 Development
 
-This project was built with clean code principles, following MVC architecture pattern for maintainability and scalability.
+---
 
-## 📄 License
+##  Final Submission Package
 
-MIT
+### What I Have Now:
+
+1. ✅ **Fully working backend** with all 5 endpoints
+2. ✅ ** frontend** with all features **
+3. ✅ **Live deployment** with public URLs
+4. ✅ **Complete documentation**
+5. ✅ **Clean GitHub repository**
+
+
+Dear Hiring Team,
+
+I've completed the Organization Management System assignment. Here are the details:
+
+🌐 Live Application: https://wedding-company-assignment-swart.vercel.app/
+🔗 GitHub Repository: https://github.com/prasanna7371/wedding-company-assignment
+📡 API Documentation: Available in README.md
+
+The system includes:
+✅ Complete CRUD operations
+✅ JWT authentication
+✅ Multi-tenant architecture
+✅ Professional UI/UX
+✅ Comprehensive error handling
+✅ Production deployment
+
+All features are fully functional and tested. Please feel free to create, update, and delete organizations using the live demo.
+
+Looking forward to discussing the implementation. I would very much like to be a part of your organisation. 
+
+Much Appreciated.
+
+Best regards,
+Prasanna Kumar K
