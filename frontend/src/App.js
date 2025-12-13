@@ -13,17 +13,23 @@ function App() {
     email: '',
     password: ''
   });
+  const [updateData, setUpdateData] = useState({
+    organization_name: '',
+    email: '',
+    password: ''
+  });
+  const [deleteOrgName, setDeleteOrgName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [apiResponse, setApiResponse] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [authToken, setAuthToken] = useState(localStorage.getItem('auth_token') || '');
 
-  // Backend API URL - change this when deploying
+  // Backend API URL
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
-  // Helper function to handle API calls
-  const makeApiRequest = async (endpoint, method = 'GET', body = null) => {
+  // Helper function to make API calls
+  const makeApiRequest = async (endpoint, method = 'GET', body = null, requiresAuth = false) => {
     setIsLoading(true);
     setErrorMessage(null);
     setApiResponse(null);
@@ -36,6 +42,11 @@ function App() {
         }
       };
 
+      // Add auth token if required
+      if (requiresAuth && authToken) {
+        config.headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
       if (body) {
         config.body = JSON.stringify(body);
       }
@@ -47,18 +58,19 @@ function App() {
         setApiResponse(data);
         return data;
       } else {
-        setErrorMessage(data.message || 'Something went wrong');
+        setErrorMessage(data.message || 'Request failed');
         return null;
       }
     } catch (err) {
-      setErrorMessage('Failed to connect to server. Make sure backend is running.');
+      setErrorMessage('Cannot connect to server. Please ensure backend is running on ' + API_BASE_URL);
+      console.error('API Error:', err);
       return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Create new organization
+  // Create organization
   const handleCreateOrganization = async (e) => {
     e.preventDefault();
     
@@ -70,7 +82,6 @@ function App() {
     const result = await makeApiRequest('/org/create', 'POST', orgData);
     
     if (result) {
-      // Clear form on success
       setOrgData({ organization_name: '', email: '', password: '' });
     }
   };
@@ -97,12 +108,72 @@ function App() {
   const handleSearch = async (e) => {
     e.preventDefault();
     
-    if (!searchQuery) {
+    if (!searchQuery.trim()) {
       setErrorMessage('Please enter an organization name');
       return;
     }
 
-    await makeApiRequest(`/org/get/${searchQuery}`, 'GET');
+    await makeApiRequest(`/org/get/${searchQuery.trim()}`, 'GET');
+  };
+
+  // Update organization
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    
+    if (!updateData.organization_name.trim()) {
+      setErrorMessage('Organization name is required');
+      return;
+    }
+
+    if (!updateData.email && !updateData.password) {
+      setErrorMessage('Please provide email or password to update');
+      return;
+    }
+
+    const updatePayload = {};
+    if (updateData.email) updatePayload.email = updateData.email;
+    if (updateData.password) updatePayload.password = updateData.password;
+
+    const result = await makeApiRequest(
+      `/org/update/${updateData.organization_name.trim()}`, 
+      'PUT', 
+      updatePayload
+    );
+
+    if (result) {
+      setUpdateData({ organization_name: '', email: '', password: '' });
+    }
+  };
+
+  // Delete organization
+  const handleDelete = async (e) => {
+    e.preventDefault();
+    
+    if (!authToken) {
+      setErrorMessage('You must be logged in to delete an organization');
+      return;
+    }
+
+    if (!deleteOrgName.trim()) {
+      setErrorMessage('Please enter organization name to delete');
+      return;
+    }
+
+    // Confirmation
+    if (!window.confirm(`Are you sure you want to delete "${deleteOrgName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    const result = await makeApiRequest(
+      `/org/delete/${deleteOrgName.trim()}`, 
+      'DELETE',
+      null,
+      true // requires auth
+    );
+
+    if (result) {
+      setDeleteOrgName('');
+    }
   };
 
   // Logout
@@ -113,18 +184,17 @@ function App() {
     setErrorMessage(null);
   };
 
-  // Update form inputs
-  const updateFormField = (setter) => (e) => {
-    setter(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+  // Switch tabs and clear messages
+  const switchTab = (tab) => {
+    setCurrentTab(tab);
+    setApiResponse(null);
+    setErrorMessage(null);
   };
 
   return (
     <div className="app-container">
       <div className="content-wrapper">
-        {/* Header Section */}
+        {/* Header */}
         <header className="app-header">
           <div className="header-content">
             <h1 className="main-title">Organization Management Portal</h1>
@@ -132,10 +202,10 @@ function App() {
           </div>
         </header>
 
-        {/* Authentication Status */}
+        {/* Auth Status */}
         {authToken && (
           <div className="auth-banner">
-            <span className="auth-text">✓ Logged In</span>
+            <span className="auth-text">✓ Authenticated</span>
             <button className="logout-btn" onClick={handleLogout}>
               Logout
             </button>
@@ -148,42 +218,44 @@ function App() {
           <div className="tab-navigation">
             <button
               className={`tab-button ${currentTab === 'create' ? 'active' : ''}`}
-              onClick={() => {
-                setCurrentTab('create');
-                setApiResponse(null);
-                setErrorMessage(null);
-              }}
+              onClick={() => switchTab('create')}
             >
-              <span className="tab-icon">🏢</span>
+              <span className="tab-icon">➕</span>
               <span>Create</span>
             </button>
             <button
               className={`tab-button ${currentTab === 'login' ? 'active' : ''}`}
-              onClick={() => {
-                setCurrentTab('login');
-                setApiResponse(null);
-                setErrorMessage(null);
-              }}
+              onClick={() => switchTab('login')}
             >
               <span className="tab-icon">🔐</span>
               <span>Login</span>
             </button>
             <button
               className={`tab-button ${currentTab === 'search' ? 'active' : ''}`}
-              onClick={() => {
-                setCurrentTab('search');
-                setApiResponse(null);
-                setErrorMessage(null);
-              }}
+              onClick={() => switchTab('search')}
             >
               <span className="tab-icon">🔍</span>
               <span>Search</span>
+            </button>
+            <button
+              className={`tab-button ${currentTab === 'update' ? 'active' : ''}`}
+              onClick={() => switchTab('update')}
+            >
+              <span className="tab-icon">✏️</span>
+              <span>Update</span>
+            </button>
+            <button
+              className={`tab-button ${currentTab === 'delete' ? 'active' : ''}`}
+              onClick={() => switchTab('delete')}
+            >
+              <span className="tab-icon">🗑️</span>
+              <span>Delete</span>
             </button>
           </div>
 
           {/* Tab Content */}
           <div className="tab-content">
-            {/* Create Organization Form */}
+            {/* CREATE TAB */}
             {currentTab === 'create' && (
               <div className="form-section">
                 <h2 className="section-title">Create New Organization</h2>
@@ -194,9 +266,9 @@ function App() {
                       type="text"
                       name="organization_name"
                       className="form-input"
-                      placeholder="e.g., my_company"
+                      placeholder="e.g., tech_company"
                       value={orgData.organization_name}
-                      onChange={updateFormField(setOrgData)}
+                      onChange={(e) => setOrgData({...orgData, organization_name: e.target.value})}
                       disabled={isLoading}
                     />
                   </div>
@@ -209,7 +281,7 @@ function App() {
                       className="form-input"
                       placeholder="admin@company.com"
                       value={orgData.email}
-                      onChange={updateFormField(setOrgData)}
+                      onChange={(e) => setOrgData({...orgData, email: e.target.value})}
                       disabled={isLoading}
                     />
                   </div>
@@ -222,23 +294,19 @@ function App() {
                       className="form-input"
                       placeholder="Minimum 6 characters"
                       value={orgData.password}
-                      onChange={updateFormField(setOrgData)}
+                      onChange={(e) => setOrgData({...orgData, password: e.target.value})}
                       disabled={isLoading}
                     />
                   </div>
 
-                  <button 
-                    type="submit" 
-                    className="submit-btn"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Creating...' : 'Create Organization'}
+                  <button type="submit" className="submit-btn" disabled={isLoading}>
+                    {isLoading ? 'Creating...' : '✨ Create Organization'}
                   </button>
                 </form>
               </div>
             )}
 
-            {/* Login Form */}
+            {/* LOGIN TAB */}
             {currentTab === 'login' && (
               <div className="form-section">
                 <h2 className="section-title">Admin Login</h2>
@@ -247,11 +315,10 @@ function App() {
                     <label className="form-label">Email Address</label>
                     <input
                       type="email"
-                      name="email"
                       className="form-input"
                       placeholder="your@email.com"
                       value={loginCredentials.email}
-                      onChange={updateFormField(setLoginCredentials)}
+                      onChange={(e) => setLoginCredentials({...loginCredentials, email: e.target.value})}
                       disabled={isLoading}
                     />
                   </div>
@@ -260,27 +327,22 @@ function App() {
                     <label className="form-label">Password</label>
                     <input
                       type="password"
-                      name="password"
                       className="form-input"
                       placeholder="Enter your password"
                       value={loginCredentials.password}
-                      onChange={updateFormField(setLoginCredentials)}
+                      onChange={(e) => setLoginCredentials({...loginCredentials, password: e.target.value})}
                       disabled={isLoading}
                     />
                   </div>
 
-                  <button 
-                    type="submit" 
-                    className="submit-btn"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Logging in...' : 'Login'}
+                  <button type="submit" className="submit-btn" disabled={isLoading}>
+                    {isLoading ? 'Logging in...' : '🔓 Login'}
                   </button>
                 </form>
               </div>
             )}
 
-            {/* Search Form */}
+            {/* SEARCH TAB */}
             {currentTab === 'search' && (
               <div className="form-section">
                 <h2 className="section-title">Find Organization</h2>
@@ -297,18 +359,97 @@ function App() {
                     />
                   </div>
 
-                  <button 
-                    type="submit" 
-                    className="submit-btn"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Searching...' : 'Search'}
+                  <button type="submit" className="submit-btn" disabled={isLoading}>
+                    {isLoading ? 'Searching...' : '🔎 Search'}
                   </button>
                 </form>
               </div>
             )}
 
-            {/* Success Response Display */}
+            {/* UPDATE TAB */}
+            {currentTab === 'update' && (
+              <div className="form-section">
+                <h2 className="section-title">Update Organization</h2>
+                <form onSubmit={handleUpdate} className="input-form">
+                  <div className="form-group">
+                    <label className="form-label">Organization Name *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter organization name"
+                      value={updateData.organization_name}
+                      onChange={(e) => setUpdateData({...updateData, organization_name: e.target.value})}
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">New Email (optional)</label>
+                    <input
+                      type="email"
+                      className="form-input"
+                      placeholder="new@email.com"
+                      value={updateData.email}
+                      onChange={(e) => setUpdateData({...updateData, email: e.target.value})}
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">New Password (optional)</label>
+                    <input
+                      type="password"
+                      className="form-input"
+                      placeholder="New password"
+                      value={updateData.password}
+                      onChange={(e) => setUpdateData({...updateData, password: e.target.value})}
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <button type="submit" className="submit-btn" disabled={isLoading}>
+                    {isLoading ? 'Updating...' : '💾 Update Organization'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* DELETE TAB */}
+            {currentTab === 'delete' && (
+              <div className="form-section">
+                <h2 className="section-title">Delete Organization</h2>
+                
+                {!authToken && (
+                  <div className="warning-box">
+                    <p>⚠️ You must be logged in to delete an organization</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleDelete} className="input-form">
+                  <div className="form-group">
+                    <label className="form-label">Organization Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter organization name to delete"
+                      value={deleteOrgName}
+                      onChange={(e) => setDeleteOrgName(e.target.value)}
+                      disabled={isLoading || !authToken}
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="submit-btn delete-btn" 
+                    disabled={isLoading || !authToken}
+                  >
+                    {isLoading ? 'Deleting...' : '🗑️ Delete Organization'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Success Response */}
             {apiResponse && (
               <div className="response-box success-box">
                 <h3 className="response-title">✓ Success</h3>
@@ -332,8 +473,8 @@ function App() {
 
         {/* Footer */}
         <footer className="app-footer">
-          <p>Built with React + Node.js + MongoDB</p>
-          <p>RESTful API • JWT Authentication • Multi-Tenant Architecture</p>
+          <p>Built with React + Node.js + Express + MongoDB</p>
+          <p>Multi-Tenant Architecture • JWT Authentication • RESTful API</p>
         </footer>
       </div>
     </div>
