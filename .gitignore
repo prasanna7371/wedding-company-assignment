@@ -1,4 +1,8 @@
-node_modules/
+echo "node_modules/
 .env
 .DS_Store
 *.log
+.vscode/
+.idea/
+dist/
+build/" > .gitignore
